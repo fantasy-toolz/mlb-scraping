@@ -1,80 +1,147 @@
 
+"""Helpers for Fantasy Toolz lineup and matchup data.
+
+The functions in this module read public CSV files maintained by Fantasy Toolz
+on GitHub.  Batting-order files contain one row per team game with the date in
+the first column and lineup spots one through nine in the remaining columns.
+Aggregate files are returned as pandas data frames so callers can continue to
+filter or join them with other baseball data.
+"""
+
 import numpy as np
 import pandas as pd
 
 
-
-def analyze_team_batting_order(year,team):
-    PositionTotal = dict()
-    TeamTotal = dict()
-    PlrTeam = dict()
-    D = np.genfromtxt('https://raw.githubusercontent.com/fantasy-toolz/batting-order/refs/heads/main/data/{}/{}.csv'.format(year,team),delimiter=',',dtype='S26',skip_header=1)   
-    print('team: ',team,' games played: ',len(D[:,0]))   
-    TeamTotal[team] = len(D[:,0])
-    #print('date,lineup1,lineup2,lineup3,lineup4,lineup5,lineup6,lineup7,lineup8,lineup9,',file=f)  
-    ngames = len(D[:,0])
-    for n in range(1,ngames):
-        for i in range(0,10):
-            if i==0:
-                # this is the date, so skip ahead
-                pass
-            else:
-                try:
-                    PositionTotal[D[n][i].decode().lstrip()][i-1] += 1
-                except:
-                    PositionTotal[D[n][i].decode().lstrip()] = np.zeros(9)
-                    PositionTotal[D[n][i].decode().lstrip()][i-1] += 1
-                    PlrTeam[D[n][i].decode().lstrip()] = team
-    return PositionTotal#,PlrTeam,TeamTotal
+BATTING_ORDER_BASE_URL = (
+    "https://raw.githubusercontent.com/fantasy-toolz/batting-order/"
+    "refs/heads/main/data"
+)
+PREDICTIONS_BASE_URL = (
+    "https://raw.githubusercontent.com/fantasy-toolz/mlb-predictions/"
+    "refs/heads/main/predictions/archive"
+)
+MIN_LINEUP_YEAR = 2021
+LINEUP_SPOTS = 9
 
 
-#PositionTotal,PlrTeam,TeamTotal = analyze_team_batting_order(year,team)
+def _validate_lineup_year(year):
+    """Raise a ValueError when a lineup summary year is not available."""
+    if int(year) < MIN_LINEUP_YEAR:
+        raise ValueError("Year must be 2021 or later.")
+
+
+def _year_from_date(date):
+    """Return the year portion from a YYYY-MM-DD date string."""
+    return date.split("-")[0]
+
+
+def analyze_team_batting_order(year, team):
+    """Count how often each player appeared in each batting-order spot.
+
+    Parameters
+    ----------
+    year : int or str
+        MLB season to fetch from the Fantasy Toolz batting-order repository.
+    team : str
+        Team abbreviation used by the source CSV, such as ``"LAD"``.
+
+    Returns
+    -------
+    dict[str, numpy.ndarray]
+        Mapping of player name to a nine-element array.  Each array position
+        contains the number of games the player batted in that lineup spot.
+        For example, index ``0`` counts leadoff appearances and index ``8``
+        counts ninth-place appearances.
+    """
+    position_total = {}
+    url = f"{BATTING_ORDER_BASE_URL}/{year}/{team}.csv"
+    lineup_rows = np.genfromtxt(url, delimiter=",", dtype="S26", skip_header=1)
+    lineup_rows = np.atleast_2d(lineup_rows)
+
+    print("team: ", team, " games played: ", len(lineup_rows[:, 0]))
+
+    for row in lineup_rows:
+        for lineup_spot, player in enumerate(row[1 : LINEUP_SPOTS + 1]):
+            player_name = player.decode().lstrip()
+            if player_name not in position_total:
+                position_total[player_name] = np.zeros(LINEUP_SPOTS)
+            position_total[player_name][lineup_spot] += 1
+
+    return position_total
+
 
 def get_all_lineups(year):
-    AllLineups = pd.read_csv('https://raw.githubusercontent.com/fantasy-toolz/batting-order/refs/heads/main/data/Aggregate/{}-all-lineups.csv'.format(year))
-    return AllLineups
+    """Return every recorded batting lineup for a season.
 
-def get_team_lineup(year,team):
-    AllLineups = get_all_lineups(year)
-    TeamLineups = AllLineups[AllLineups['team']==team]
-    return TeamLineups
+    Parameters
+    ----------
+    year : int or str
+        MLB season available in the Fantasy Toolz aggregate lineup data.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Data frame containing all teams and dates from the season aggregate
+        lineup file.
+    """
+    url = f"{BATTING_ORDER_BASE_URL}/Aggregate/{year}-all-lineups.csv"
+    return pd.read_csv(url)
+
+
+def get_team_lineup(year, team):
+    """Return all recorded lineups for one team in a season."""
+    all_lineups = get_all_lineups(year)
+    return all_lineups[all_lineups["team"] == team]
+
 
 def get_date_lineups(date):
-    year = date.split('-')[0]
-    AllLineups = get_all_lineups(year)
-    DateLineups = AllLineups[AllLineups['date']==date]
-    return DateLineups
+    """Return all recorded lineups for a single date.
+
+    The date must use ``YYYY-MM-DD`` format; its year selects the aggregate
+    season file before filtering to the requested date.
+    """
+    year = _year_from_date(date)
+    all_lineups = get_all_lineups(year)
+    return all_lineups[all_lineups["date"] == date]
+
 
 def analyze_all_teams(year):
-    """ # this is the manual solution: we now have a consolidated version
-    teams = ['LAA', 'HOU', 'OAK', 'TOR', 'ATL', 'MIL', 'STL','CHC', 'AZ', 'LAD', 'SF', 'CLE', 'SEA', 'MIA','NYM', 'WSH', 'BAL', 'SD', 'PHI', 'PIT', 'TEX','TB', 'BOS', 'CIN', 'COL', 'KC', 'DET', 'MIN','CWS', 'NYY']
-    AllPlayers = dict()
-    for team in teams:
-        PositionTotal = analyze_team_batting_order(year,team)
-        for player in PositionTotal.keys():
-            try:
-                AllPlayers[player] += PositionTotal[player]
-            except:
-                AllPlayers[player] = PositionTotal[player]
-    return AllPlayers
+    """Return the season batting-order summary for every player.
+
+    Parameters
+    ----------
+    year : int or str
+        MLB season.  Fantasy Toolz aggregate summaries are available for 2021
+        and later.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Aggregate player batting-order summary from Fantasy Toolz.
     """
-    if int(year) < 2021:
-        raise ValueError('Year must be 2021 or later.')
-    AllPlayers = pd.read_csv('https://raw.githubusercontent.com/fantasy-toolz/batting-order/refs/heads/main/data/Aggregate/Summaries/{}player-batting-order.csv'.format(year))
-    return AllPlayers
+    _validate_lineup_year(year)
+    url = f"{BATTING_ORDER_BASE_URL}/Aggregate/Summaries/{year}player-batting-order.csv"
+    return pd.read_csv(url)
 
 
-def get_date_matchups(date,postfacto=False):
-    year = date.split('-')[0]
+def get_date_matchups(date, postfacto=False):
+    """Return predicted or validated matchups for a single date.
 
-    # first look to see if validation is available?
+    Parameters
+    ----------
+    date : str
+        Date to fetch in ``YYYY-MM-DD`` format.
+    postfacto : bool, default False
+        When ``False``, read the prediction archive.  When ``True``, read the
+        validation archive for the same date.
 
-    if postfacto:
-        valid = 'validation'
-    else:
-        valid = ''
-
-    AllMatchups = pd.read_csv('https://raw.githubusercontent.com/fantasy-toolz/mlb-predictions/refs/heads/main/predictions/archive/{}/{}{}.csv'.format(year,date,valid))
-
-    Matchups = AllMatchups[AllMatchups['date']==date]
-    return Matchups
+    Returns
+    -------
+    pandas.DataFrame
+        Matchup rows whose ``date`` column equals the requested date.
+    """
+    year = _year_from_date(date)
+    suffix = "validation" if postfacto else ""
+    url = f"{PREDICTIONS_BASE_URL}/{year}/{date}{suffix}.csv"
+    all_matchups = pd.read_csv(url)
+    return all_matchups[all_matchups["date"] == date]

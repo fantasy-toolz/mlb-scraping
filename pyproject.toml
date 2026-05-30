@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlbstatscraping"
-version = "2.1.1"
+version = "2.1.2"
 description = "A fantasy baseball-oriented stat scraping tool"
 authors = [{ name = "Michael Petersen", email = "fantasytoolz@gmail.com" }]
 license = { text = "New BSD" }

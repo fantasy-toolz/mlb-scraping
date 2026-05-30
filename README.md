@@ -1,4 +1,4 @@
-# stat-scraping
+# mlb-scraping
 ## FantasyToolz
 ## v2.1
 

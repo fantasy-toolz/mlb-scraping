@@ -1,34 +1,12 @@
 
-output1.html
-output1.html
-__pycache__/ownership_curve.cpython-37.pyc
-*.png
-__pycache__/ownership_curve.cpython-39.pyc
-__pycache__/stat_scraping.cpython-39.pyc
-__pycache__/stat_scraping.cpython-39.pyc
-.github/workflows/main.yml.bak
 
-.pytest_cache
-
+# mac things that keep appearing
 *__pycache__/*
-*.ipynb
 *.DS_Store
 
-batcast/__pycache__/*
-src/__pycache__/*
-
-raw.githubusercontent.com
-
-src/fantasytoolz/__pycache__/*
-
-src/*egg*
-
-build/
-
-*.csv
-
 tests/__pycache__
-
 src/__pycache__
+src/*/__pycache__
 
-__pycache__
+.pytest_cache
+build/*

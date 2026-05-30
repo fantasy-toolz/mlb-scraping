@@ -1,0 +1,5 @@
+numpy>=1.7
+pandas
+matplotlib
+beautifulsoup4
+requests
