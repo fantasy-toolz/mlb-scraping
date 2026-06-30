@@ -21,6 +21,28 @@ def _clean_name_team_columns(df):
     return df
 
 
+FANGRAPHS_TEXT_COLUMNS = {
+    'Name',
+    'Team',
+    'PlayerName',
+    'PlayerNameRoute',
+    'TeamName',
+    'TeamNameAbb',
+    'Pos',
+    'position',
+    'positionDB',
+    'Bats',
+    'Throws',
+}
+
+
+def _coerce_numeric_columns(df):
+    for col in df.columns:
+        if col not in FANGRAPHS_TEXT_COLUMNS:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+    return df
+
+
 def _fangraphs_date_range(year, daystart='', dayend=''):
     return daystart or f"{year}-01-01", dayend or f"{year}-12-31"
 
@@ -108,10 +130,8 @@ def grab_fangraphs_hitting_data(years,daystart='',dayend='',verbose=False,advanc
         #df = pd.DataFrame(rows, columns=headers)
         df = _clean_name_team_columns(df)
 
-        # Convert all columns except 'Name' and 'Team' to float
-        for col in df.columns:
-            if col not in ['Name', 'Team']:
-                df[col] = pd.to_numeric(df[col], errors='coerce') # clean the DF
+        # Convert stat columns to numeric while preserving identity columns.
+        df = _coerce_numeric_columns(df)
 
         # trim anyone who didn't actually play
         df = df.loc[df['G'].astype(float) > 0]
@@ -209,10 +229,8 @@ def grab_fangraphs_pitching_data(years,daystart='',dayend='',verbose=False,advan
         #df = pd.DataFrame(rows, columns=headers)
         df = _clean_name_team_columns(df)
 
-        # Convert all columns except 'Name' and 'Team' to float
-        for col in df.columns:
-            if col not in ['Name', 'Team']:
-                df[col] = pd.to_numeric(df[col], errors='coerce') # clean the DF
+        # Convert stat columns to numeric while preserving identity columns.
+        df = _coerce_numeric_columns(df)
 
         # trim anyone who didn't actually play
         df = df.loc[df['G'].astype(float) > 0]

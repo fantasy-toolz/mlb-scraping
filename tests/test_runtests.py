@@ -258,3 +258,27 @@ def test_pitching_scraper_advanced_mode_returns_all_columns(monkeypatch):
 
     assert "K/9" in result.columns
     assert result.loc[0, "K/9"] == 10.69
+
+
+def test_pitching_scraper_advanced_mode_preserves_throws(monkeypatch):
+    def fake_get(url, params):
+        return FangraphsResponse(
+            [
+                {
+                    "season": "2024",
+                    "Name": "Tarik Skubal",
+                    "Team": "DET",
+                    "Throws": "L",
+                    "G": "31",
+                    "IP": "192.0",
+                    "K/9": "10.69",
+                }
+            ]
+        )
+
+    monkeypatch.setattr(fgs.requests, "get", fake_get)
+
+    result = fgs.grab_fangraphs_pitching_data(["2024"], advanced=True)
+
+    assert result.loc[0, "Throws"] == "L"
+    assert result.loc[0, "K/9"] == 10.69
