@@ -3,7 +3,11 @@ README.md
 pyproject.toml
 requirements.txt
 .github/workflows/tests.yml
-.github/workflows/archive/main.yml
+examples/All-Stats-Investigation.ipynb
+examples/Testing-ANN.ipynb
+examples/Testing-Normality.ipynb
+examples/Testing-PCA.ipynb
+examples/XBH.ipynb
 src/mlbstatscraping.py
 src/fangraphs/fangraphsscraper.py
 src/fangraphs/archive/grab_ip_pa_forecasts.py
