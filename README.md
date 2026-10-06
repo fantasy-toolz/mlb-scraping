@@ -61,21 +61,6 @@ AwayLineups = pd.merge(Matchups,DateLineups,left_on="awayteam",right_on="team")
 ```
 
 
-## Fangraphs
-
-Get stats from Fangraphs:
-
-```python
-import mlbstatscraping as mss
-
-HittingDF = mss.get_fangraphs_data('hitting',['2024'])
-PitchingDF = mss.get_fangraphs_data('pitching',['2024'])
-```
-
-Specific date ranges can also be scraped in a season, e.g. by
-```python
-HittingDF = ss.get_fangraphs_data('hitting',['2024'],'2024-04-01','2024-05-01')
-```
 
 ## FantasyPros
 

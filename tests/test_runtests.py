@@ -131,8 +131,8 @@ def test_daystart_year_can_match_any_requested_year(monkeypatch, sample_hitting_
 def test_hitting_scraper_uses_full_season_dates_by_default(monkeypatch):
     requests = []
 
-    def fake_get(url, params):
-        requests.append((url, params))
+    def fake_get(url, params, headers=None):
+        requests.append((url, params, headers))
         return FangraphsResponse(
             [
                 {
@@ -154,13 +154,14 @@ def test_hitting_scraper_uses_full_season_dates_by_default(monkeypatch):
     assert "wRC+" not in result.columns
     assert requests[0][1]["startdate"] == "2024-01-01"
     assert requests[0][1]["enddate"] == "2024-12-31"
+    assert "User-Agent" in requests[0][2]
 
 
 def test_hitting_scraper_maps_daystart_and_dayend_to_fangraphs_dates(monkeypatch):
     requests = []
 
-    def fake_get(url, params):
-        requests.append((url, params))
+    def fake_get(url, params, headers=None):
+        requests.append((url, params, headers))
         return FangraphsResponse(
             [
                 {
@@ -186,7 +187,7 @@ def test_hitting_scraper_maps_daystart_and_dayend_to_fangraphs_dates(monkeypatch
 
 
 def test_hitting_scraper_advanced_mode_returns_all_columns(monkeypatch):
-    def fake_get(url, params):
+    def fake_get(url, params, headers=None):
         return FangraphsResponse(
             [
                 {
@@ -211,8 +212,8 @@ def test_hitting_scraper_advanced_mode_returns_all_columns(monkeypatch):
 def test_pitching_scraper_maps_daystart_and_dayend_to_fangraphs_dates(monkeypatch):
     requests = []
 
-    def fake_get(url, params):
-        requests.append((url, params))
+    def fake_get(url, params, headers=None):
+        requests.append((url, params, headers))
         return FangraphsResponse(
             [
                 {
@@ -238,7 +239,7 @@ def test_pitching_scraper_maps_daystart_and_dayend_to_fangraphs_dates(monkeypatc
 
 
 def test_pitching_scraper_advanced_mode_returns_all_columns(monkeypatch):
-    def fake_get(url, params):
+    def fake_get(url, params, headers=None):
         return FangraphsResponse(
             [
                 {
@@ -261,7 +262,7 @@ def test_pitching_scraper_advanced_mode_returns_all_columns(monkeypatch):
 
 
 def test_pitching_scraper_advanced_mode_preserves_throws(monkeypatch):
-    def fake_get(url, params):
+    def fake_get(url, params, headers=None):
         return FangraphsResponse(
             [
                 {
